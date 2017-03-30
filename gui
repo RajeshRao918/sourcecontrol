@@ -1,0 +1,41 @@
+PRE-MERGE CHECKS
+Before applying outside changes, you should get your own work in good shape and committed locally, so it will not be clobbered if there are conflicts. See also git-stash[1]. git pull and git merge will stop without doing anything when local uncommitted changes overlap with files that git pull/git merge may need to update.
+
+To avoid recording unrelated changes in the merge commit, git pull and git merge will also abort if there are any changes registered in the index relative to the HEAD commit. (One exception is when the changed index entries are in the state that would result from the merge already.)
+
+If all named commits are already ancestors of HEAD, git merge will exit early with the message "Already up-to-date."
+
+FAST-FORWARD MERGE
+Often the current branch head is an ancestor of the named commit. This is the most common case especially when invoked from git pull: you are tracking an upstream repository, you have committed no local changes, and now you want to update to a newer upstream revision. In this case, a new commit is not needed to store the combined history; instead, the HEAD (along with the index) is updated to point at the named commit, without creating an extra merge commit.
+
+This behavior can be suppressed with the --no-ff option.
+
+TRUE MERGE
+Except in a fast-forward merge (see above), the branches to be merged must be tied together by a merge commit that has both of them as its parents.
+
+A merged version reconciling the changes from all branches to be merged is committed, and your HEAD, index, and working tree are updated to it. It is possible to have modifications in the working tree as long as they do not overlap; the update will preserve them.
+
+When it is not obvious how to reconcile the changes, the following happens:
+
+The HEAD pointer stays the same.
+
+The MERGE_HEAD ref is set to point to the other branch head.
+
+Paths that merged cleanly are updated both in the index file and in your working tree.
+
+For conflicting paths, the index file records up to three versions: stage 1 stores the version from the common ancestor, stage 2 from HEAD, and stage 3 from MERGE_HEAD (you can inspect the stages with git ls-files -u). The working tree files contain the result of the "merge" program; i.e. 3-way merge results with familiar conflict markers <<< === >>>.
+
+No other changes are made. In particular, the local modifications you had before you started merge will stay the same and the index entries for them stay as they were, i.e. matching HEAD.
+
+If you tried a merge which resulted in complex conflicts and want to start over, you can recover with git merge --abort.
+
+MERGING TAG
+When merging an annotated (and possibly signed) tag, Git always creates a merge commit even if a fast-forward merge is possible, and the commit message template is prepared with the tag message. Additionally, if the tag is signed, the signature check is reported as a comment in the message template. See also git-tag[1].
+
+When you want to just integrate with the work leading to the commit that happens to be tagged, e.g. synchronizing with an upstream release point, you may not want to make an unnecessary merge commit.
+
+In such a case, you can "unwrap" the tag yourself before feeding it to git merge, or pass --ff-only when you do not have any work on your own. e.g.
+
+git fetch origin
+git merge v1.2.3^0
+git merge --ff-only v1.2.3
